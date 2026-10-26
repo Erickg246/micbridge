@@ -1,0 +1,54 @@
+{
+  "name": "micbridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Native Android microphone and Linux virtual microphone receiver",
+  "type": "module",
+  "main": "desktop/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test",
+    "package:linux": "electron-builder --linux deb"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "electron": "45.0.0",
+    "electron-builder": "26.0.12"
+  },
+  "build": {
+    "appId": "app.micbridge.desktop",
+    "productName": "MicBridge",
+    "files": [
+      "desktop/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "linux": {
+      "category": "AudioVideo",
+      "target": [
+        "deb"
+      ],
+      "icon": "desktop/icon.png"
+    },
+    "deb": {
+      "maintainer": "MicBridge contributors",
+      "depends": [
+        "libgtk-3-0",
+        "libnss3",
+        "libasound2",
+        "libgbm1",
+        "libnotify4",
+        "libxtst6",
+        "xdg-utils",
+        "pulseaudio-utils",
+        "openssl"
+      ],
+      "afterInstall": "scripts/after-install.sh"
+    }
+  },
+  "author": "MicBridge contributors"
+}
