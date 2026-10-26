@@ -57,4 +57,4 @@ Os testes básicos verificam TLS, código incorreto, formato incompatível, conc
 
 ## GitHub
 
-O nome do produto é MicBridge. A tentativa de renomear `Erickg246/mic-phone-to-pc-linux-` para `micbridge` foi bloqueada pelo proxy do ambiente: `api.github.com` não estava permitido (CONNECT 403). O proprietário pode fazer a alteração em **Settings → General → Repository name**. Os instaladores são gerados localmente pelos comandos acima. Eles ainda não foram publicados em GitHub Releases nem em lojas de aplicativos.
+Repositório: [Erickg246/micbridge](https://github.com/Erickg246/micbridge). O código está na branch `main`. Os instaladores são gerados localmente pelos comandos acima; ainda não foram publicados em GitHub Releases nem em lojas de aplicativos.
