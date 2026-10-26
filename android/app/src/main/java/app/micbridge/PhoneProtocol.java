@@ -19,7 +19,7 @@ final class PhoneProtocol {
             while ((next = input.read()) != -1 && next != '\n') {
                 if (header.size() >= 64) throw new IOException("Cabeçalho inválido"); header.write(next);
             }
-            if (next == -1) return; // Certificate discovery disconnects without requesting audio.
+            if (next == -1) return;
             if (!header.toString(StandardCharsets.US_ASCII.name()).equals("MICBRIDGE/2")) { output.write("ERROR version\n".getBytes(StandardCharsets.US_ASCII)); return; }
             output.write("WAIT\n".getBytes(StandardCharsets.US_ASCII)); output.flush();
             if (!approval.allow()) { output.write("DENIED\n".getBytes(StandardCharsets.US_ASCII)); output.flush(); return; }

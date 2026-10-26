@@ -3,11 +3,11 @@ import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LinuxAudio } from './audio.js';
-import { PhoneClient, discoverPhone, parseAddress } from './phone-client.js';
+import { PhoneClient, parseAddress } from './phone-client.js';
 const here = dirname(fileURLToPath(import.meta.url));
 let window, client, quitting = false, ready = false, connecting = false, attempt = 0;
 let status = { state: 'starting', message: 'Preparando o microfone virtual…' };
-let connection = { address: '' }, known = {};
+let connection = { address: '' };
 function update(value) { status = value; if (window && !window.isDestroyed()) window.webContents.send('update', { status, connection }); }
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
@@ -20,7 +20,7 @@ else {
   app.whenReady().then(async () => {
     const settingsPath = join(app.getPath('userData'), 'phones.json');
     await mkdir(app.getPath('userData'), { recursive: true });
-    try { const saved = JSON.parse(await readFile(settingsPath, 'utf8')); known = saved.known ?? {}; connection.address = saved.address ?? ''; } catch {}
+    try { const saved = JSON.parse(await readFile(settingsPath, 'utf8')); connection.address = saved.address ?? ''; } catch {}
     window = new BrowserWindow({ width: 900, height: 820, minWidth: 640, minHeight: 600, title: 'MicBridge', icon: join(here, 'icon.png'), backgroundColor: '#10151e', webPreferences: { preload: join(here, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true } });
     window.setMenuBarVisibility(false);
     window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
@@ -31,19 +31,10 @@ else {
       if (!ready || connecting) return;
       connecting = true; const current = ++attempt;
       try {
-        const target = parseAddress(address); client.disconnect();
-        update({ state: 'connecting', message: 'Procurando o celular…' });
-        const identity = await discoverPhone(address);
-        if (current !== attempt || quitting) return;
-        if (known[target.key] !== identity.fingerprint) {
-          const answer = await dialog.showMessageBox(window, { type: 'question', title: 'Conferir celular', message: 'Confirme a identidade do celular', detail: 'No Android, abra “Identidade do celular”. Os números precisam ser iguais:\n\n' + identity.fingerprint, buttons: ['Cancelar', 'São iguais · Conectar'], defaultId: 0, cancelId: 0 });
-          if (current !== attempt || quitting) return;
-          if (answer.response !== 1) { update({ state: 'waiting', message: 'Conexão cancelada' }); return; }
-          known[target.key] = identity.fingerprint;
-        }
+        parseAddress(address); client.disconnect();
         connection.address = address.trim();
-        await writeFile(settingsPath, JSON.stringify({ known, address: connection.address }), { mode: 0o600 });
-        if (current === attempt && !quitting) await client.connect(address, identity);
+        await writeFile(settingsPath, JSON.stringify({ address: connection.address }), { mode: 0o600 });
+        if (current === attempt && !quitting) await client.connect(address);
       } catch (error) { if (current === attempt) update({ state: 'error', message: error.code === 'ECONNREFUSED' ? 'Servidor não iniciado. Toque em Iniciar servidor no celular.' : error.message }); }
       finally { connecting = false; }
     });

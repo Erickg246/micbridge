@@ -1,0 +1,2 @@
+dc06f30443daf176ae7d49c02fbfc358dda378dfef23541c04b361086fcd2960  downloads/MicBridge-0.3.0-android.apk
+b2fac5b527a63a11806d238de42ead00a912591f1243dee6ba20f2c8d97c8d24  downloads/micbridge_0.3.0_amd64.deb

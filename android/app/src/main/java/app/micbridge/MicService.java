@@ -8,17 +8,17 @@ import android.content.pm.ServiceInfo;
 import android.media.*;
 import android.os.*;
 import java.io.*;
-import java.security.KeyStore;
+import java.net.*;
 import java.util.*;
-import javax.net.ssl.*;
+
 
 public final class MicService extends Service {
     static final String STATUS = "app.micbridge.STATUS";
     static volatile boolean active = false, muted = false, streaming = false;
-    static volatile String message = "Toque em Iniciar servidor", fingerprint = "", pendingId = "", peer = "";
+    static volatile String message = "Toque em Iniciar servidor", pendingId = "", peer = "";
     private volatile boolean running;
-    private volatile SSLSocket socket;
-    private volatile SSLServerSocket server;
+    private volatile Socket socket;
+    private volatile ServerSocket server;
     private volatile AudioRecord recorder;
     private PowerManager.WakeLock wakeLock;
     private final Object approvalLock = new Object();
@@ -58,25 +58,20 @@ public final class MicService extends Service {
             else startForeground(1, notification);
             running = true; active = true; muted = false;
             wakeLock = getSystemService(PowerManager.class).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "micbridge:server");
-            renewWakeLock.run(); update("Preparando servidor seguro…", 0);
+            renewWakeLock.run(); update("Preparando servidor…", 0);
             new Thread(this::serve, "micbridge-server").start();
         } catch (Exception error) { active = false; update("Não foi possível iniciar: " + error.getMessage(), 0); stopSelf(); }
         return START_NOT_STICKY;
     }
     private void serve() {
         try {
-            KeyStore keys = PhoneIdentity.keys(); fingerprint = PhoneIdentity.fingerprint(keys);
-            server = (SSLServerSocket) PhoneIdentity.context(keys).getServerSocketFactory().createServerSocket(47321);
-            List<String> protocols = new ArrayList<>();
-            for (String protocol : server.getSupportedProtocols()) if (protocol.equals("TLSv1.2") || protocol.equals("TLSv1.3")) protocols.add(protocol);
-            server.setEnabledProtocols(protocols.toArray(new String[0]));
+            server = new ServerSocket(47321);
             if (!running) return;
             update("Servidor pronto · Digite o IP no PC", 0);
             while (running) {
                 try {
-                    socket = (SSLSocket) server.accept(); socket.setSoTimeout(8000); socket.setTcpNoDelay(true);
+                    socket = (Socket) server.accept(); socket.setSoTimeout(8000); socket.setTcpNoDelay(true);
                     if (!running) break;
-                    socket.startHandshake();
                     PhoneProtocol.serve(socket, this::askApproval, new Microphone());
                 } catch (Exception error) { if (running && streaming) update("PC desconectado: " + error.getMessage(), 0); }
                 finally {
@@ -130,12 +125,12 @@ public final class MicService extends Service {
         streaming = false;
     }
     private void closeConnection() {
-        SSLSocket current = socket; socket = null;
+        Socket current = socket; socket = null;
         if (current != null) try { current.close(); } catch (IOException ignored) {}
         closeRecorder(); pendingId = ""; peer = "";
     }
     private void release() {
-        SSLServerSocket listener = server; server = null;
+        ServerSocket listener = server; server = null;
         if (listener != null) try { listener.close(); } catch (IOException ignored) {}
         closeConnection();
         synchronized (approvalLock) { approvalLock.notifyAll(); }

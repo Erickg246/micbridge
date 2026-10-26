@@ -1,18 +1,14 @@
-# Baixar MicBridge 0.2.0
+# MicBridge 0.3.0 — sem criptografia
 
-**Atualize os dois apps:** o celular agora mostra o IP e funciona como servidor; o PC conecta a ele. A versão 0.2.0 não se conecta à versão 0.1.0.
+Atualize os dois apps. Esta versão usa TCP direto e não se conecta às versões anteriores com TLS.
 
-- [Android — APK 0.2.0](https://github.com/Erickg246/micbridge/raw/refs/heads/main/downloads/MicBridge-0.2.0-android.apk)
-- [Linux Debian/Ubuntu x64 — DEB 0.2.0](https://github.com/Erickg246/micbridge/raw/refs/heads/main/downloads/micbridge_0.2.0_amd64.deb)
-
-Instale no Linux:
+- [Android — APK](https://github.com/Erickg246/micbridge/raw/refs/heads/main/downloads/MicBridge-0.3.0-android.apk)
+- [Linux x64 — DEB](https://github.com/Erickg246/micbridge/raw/refs/heads/main/downloads/micbridge_0.3.0_amd64.deb)
 
 ```sh
-sudo apt install ./micbridge_0.2.0_amd64.deb
+sudo apt install ./micbridge_0.3.0_amd64.deb
 ```
 
-Abra MicBridge pelo menu ou execute `/opt/MicBridge/micbridge`, sem sudo. Esta atualização corrige o erro de permissão e o atalho ausente.
+No celular, toque em **Iniciar servidor**. No PC, digite o IP do celular e clique em **Conectar**. Toque em **Permitir PC** no celular. Selecione **MicBridge_Microfone_do_celular** como entrada no Linux.
 
-No Android, toque em **Iniciar servidor**. No PC, digite o IP mostrado no celular e clique em **Conectar**. Confirme a identidade na primeira conexão e toque em **Permitir PC** no celular. Use a mesma rede Wi-Fi e selecione **MicBridge_Microfone_do_celular** como entrada de áudio no Linux.
-
-O áudio usa TLS. APK de teste para Android 8+, assinado com chave de depuração. Ainda é necessário testar em celular físico.
+Sem certificado, código ou confirmação de identidade. O áudio não é criptografado; use a rede local. APK de desenvolvimento para Android 8+. Captura em aparelho físico ainda não validada.

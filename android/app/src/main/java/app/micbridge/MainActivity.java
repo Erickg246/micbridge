@@ -30,7 +30,7 @@ public final class MainActivity extends Activity {
         ScrollView scroll = new ScrollView(this); scroll.setFillViewport(true); scroll.setBackgroundColor(bg);
         LinearLayout root = column(); root.setPadding(dp(26), dp(34), dp(26), dp(32)); scroll.addView(root);
         root.addView(text("M ↗    MicBridge", 25, ink, true));
-        TextView eyebrow = text("CELULAR → PC · CRIPTOGRAFADO", 11, green, true); eyebrow.setPadding(0,dp(32),0,dp(16)); root.addView(eyebrow);
+        TextView eyebrow = text("CELULAR → PC · REDE LOCAL", 11, green, true); eyebrow.setPadding(0,dp(32),0,dp(16)); root.addView(eyebrow);
         root.addView(text("Seu microfone.\nPronto para o PC.", 36, ink, true));
         TextView description = text("Inicie o servidor aqui. No PC, digite o IP mostrado abaixo e clique em Conectar.", 15, gray, false); description.setPadding(0,dp(16),0,dp(26)); root.addView(description);
         LinearLayout card = column(); card.setPadding(dp(20),dp(20),dp(20),dp(20)); card.setBackground(shape(panel)); root.addView(card);
@@ -39,8 +39,6 @@ public final class MainActivity extends Activity {
         card.addView(text("Use a mesma rede Wi-Fi no celular e no PC. Porta automática: 47321.", 13, gray, false));
         start = button("Iniciar servidor"); start.setTextColor(bg); start.setBackgroundTintList(android.content.res.ColorStateList.valueOf(green)); card.addView(start);
         start.setOnClickListener(v -> { if (MicService.active) { stopService(new Intent(this, MicService.class)); } else permissionsAndStart(); });
-        Button identity = button("Identidade do celular"); card.addView(identity);
-        identity.setOnClickListener(v -> new AlertDialog.Builder(this).setTitle("Identidade do celular").setMessage(MicService.fingerprint.isEmpty() ? "Inicie o servidor primeiro." : "Na primeira conexão, compare estes números com os mostrados no PC:\n\n" + MicService.fingerprint).setPositiveButton("Fechar", null).show());
         approvalCard = column(); approvalCard.setPadding(0,dp(20),0,dp(10)); root.addView(approvalCard);
         approvalText = text("", 16, ink, true); approvalCard.addView(approvalText);
         Button allow = button("Permitir PC"), reject = button("Recusar"); approvalCard.addView(allow); approvalCard.addView(reject);

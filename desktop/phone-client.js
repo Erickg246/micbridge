@@ -1,5 +1,4 @@
-import tls from 'node:tls';
-import { X509Certificate } from 'node:crypto';
+import net from 'node:net';
 import { EventEmitter } from 'node:events';
 
 export function parseAddress(value) {
@@ -10,40 +9,15 @@ export function parseAddress(value) {
   return { host, port, key: `${host}:${port}` };
 }
 
-// Discovery retrieves only the public certificate. No microphone request or audio
-// is sent on this unauthenticated socket. The real connection uses this certificate
-// as a trust anchor, after the user compares its fingerprint with the phone.
-export function discoverPhone(address) {
-  const { host, port } = parseAddress(address);
-  return new Promise((resolve, reject) => {
-    const socket = tls.connect({ host, port, rejectUnauthorized: false, minVersion: 'TLSv1.2' });
-    socket.setTimeout(6000, () => socket.destroy(new Error('Celular não respondeu. Inicie o servidor no Android e confira o Wi-Fi.')));
-    socket.once('error', reject);
-    socket.once('secureConnect', () => {
-      try {
-        const raw = socket.getPeerCertificate().raw;
-        if (!raw) throw new Error('O celular não apresentou certificado.');
-        const cert = new X509Certificate(raw);
-        if (Date.parse(cert.validTo) < Date.now() || Date.parse(cert.validFrom) > Date.now()) throw new Error('Certificado fora da validade. Confira a data dos aparelhos.');
-        resolve({ pem: cert.toString(), fingerprint: cert.fingerprint256 });
-      } catch (error) { reject(error); }
-      finally { socket.destroy(); }
-    });
-  });
-}
-
 export class PhoneClient extends EventEmitter {
   constructor(audio) { super(); this.audio = audio; this.socket = null; this.stream = null; this.attempt = 0; }
   async prepare() { await this.audio.prepare(); }
-  async connect(address, identity) {
+  async connect(address) {
     this.disconnect();
     const generation = ++this.attempt;
     const { host, port } = parseAddress(address);
-    const trusted = new X509Certificate(identity.pem);
-    if (trusted.fingerprint256 !== identity.fingerprint) throw new Error('Identidade inválida.');
     this.emit('status', { state: 'connecting', message: 'Conectando ao celular…' });
-    const socket = tls.connect({ host, port, ca: identity.pem, rejectUnauthorized: true, minVersion: 'TLSv1.2',
-      checkServerIdentity: (_host, cert) => cert.fingerprint256 === identity.fingerprint ? undefined : new Error('A identidade do celular mudou.') });
+    const socket = net.createConnection({ host, port });
     this.socket = socket;
     let header = Buffer.alloc(0), phase = 'header', input = null, failed = false;
     socket.setTimeout(70000, () => socket.destroy(new Error('Tempo esgotado. Autorize a conexão na tela do celular.')));
@@ -54,7 +28,7 @@ export class PhoneClient extends EventEmitter {
       this.stream?.stop(); this.stream = null; this.socket = null;
       if (!failed) this.emit('status', { state: 'waiting', message: 'Celular desconectado. Clique em Conectar para tentar novamente.' });
     });
-    socket.once('secureConnect', () => socket.write('MICBRIDGE/2\n'));
+    socket.once('connect', () => socket.write('MICBRIDGE/2\n'));
     const write = data => {
       if (!data.length) return true;
       const ready = input.write(data);
