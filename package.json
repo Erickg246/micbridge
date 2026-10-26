@@ -1,6 +1,6 @@
 {
   "name": "micbridge",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Native Android microphone and Linux virtual microphone receiver",
   "type": "module",
@@ -8,7 +8,7 @@
   "scripts": {
     "start": "electron .",
     "test": "node --test",
-    "package:linux": "electron-builder --linux deb"
+    "package:linux": "umask 022 && electron-builder --linux deb"
   },
   "engines": {
     "node": ">=22"
@@ -48,7 +48,8 @@
         "openssl"
       ],
       "afterInstall": "scripts/after-install.sh"
-    }
+    },
+    "afterPack": "scripts/fix-package-permissions.cjs"
   },
   "author": "MicBridge contributors"
 }

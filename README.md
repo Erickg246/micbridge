@@ -1,60 +1,68 @@
 # MicBridge
 
-Seu Android como microfone no Linux. Dois aplicativos instalados, sem navegador, conta ou serviço na internet.
+Seu Android como microfone no Linux, com dois aplicativos instalados e áudio criptografado. **Na versão 0.2.0, o celular é o servidor: ele mostra o IP, e o PC conecta.**
 
-**Versão inicial: Android 8+ e Linux x64 com PulseAudio ou PipeWire/PulseAudio.** O receptor cria uma entrada de gravação chamada **MicBridge_Microfone_do_celular**. Selecione essa entrada no Discord, OBS, gravador ou nas configurações de som. Ela fica disponível enquanto o app Linux está aberto; ao fechá-lo, os dispositivos virtuais criados por ele são removidos. O app não altera o microfone padrão do sistema.
+[Baixar os aplicativos](downloads/README.md)
 
-## Instalar e usar
+## Instalar e conectar
 
-1. No Linux Debian/Ubuntu, instale `micbridge_0.1.0_amd64.deb` com `sudo apt install ./micbridge_0.1.0_amd64.deb`. O pacote instala o app e declara as dependências de áudio e OpenSSL. Abra **MicBridge** pelo menu de aplicativos, na sessão normal do usuário, sem sudo.
-2. No Android, instale `app-debug.apk`. É um APK de desenvolvimento, assinado com chave de depuração; autorize a instalação pela fonte usada. Não é uma publicação na Play Store.
-3. Conecte os dois aparelhos à mesma rede Wi-Fi. No celular, informe o IP/porta e o código de seis dígitos exibidos no PC.
-4. Compare a impressão digital mostrada no celular com **Conferir identidade do PC** no Linux. Confirme apenas se forem iguais. Depois, permita o microfone. Notificações são recomendadas para controlar a transmissão.
-5. Escolha **MicBridge_Microfone_do_celular** como entrada de áudio no aplicativo Linux que deseja usar. Use **Silenciar microfone** ou **Parar transmissão** no celular; a notificação também permite parar.
+Atualize **os dois aplicativos** para 0.2.0; o protocolo mudou e não funciona com o app 0.1.0 do outro lado.
 
-Se houver firewall, permita **TCP 47321** apenas na rede local. Redes Wi-Fi com isolamento entre clientes impedem a conexão. Não exponha essa porta na internet. A transmissão é TLS com certificado do PC validado por impressão digital e código de sessão; não há relay externo. O código muda a cada abertura do receptor. Apenas um celular pode transmitir por vez.
+1. No Android 8+, instale `MicBridge-0.2.0-android.apk`. Abra o app, permita o microfone e toque em **Iniciar servidor**. O IP do próprio celular aparece na tela.
+2. No Linux Debian/Ubuntu x64, instale `micbridge_0.2.0_amd64.deb` com `sudo apt install ./micbridge_0.2.0_amd64.deb`. Abra **MicBridge** pelo menu, na sessão do usuário. Pelo terminal: `/opt/MicBridge/micbridge`, sem sudo.
+3. Conecte ambos à mesma rede Wi-Fi. Digite **somente o IP do celular no PC** e clique em **Conectar**; a porta 47321 é automática. Também é possível informar `IP:porta`.
+4. Na primeira conexão, o PC mostra a identidade do celular. No Android, toque em **Identidade do celular** e confirme no PC apenas se os números forem iguais. A identidade confirmada é lembrada para esse endereço.
+5. No celular, toque em **Permitir PC**. A captura só começa depois dessa autorização; cada nova conexão precisa ser autorizada. Não há código numérico para digitar.
+6. Selecione **MicBridge_Microfone_do_celular** como microfone no Discord, OBS ou outro aplicativo Linux.
 
-## Desenvolver o receptor Linux
+O Android permite silenciar o áudio, recusar o PC e parar o servidor. Uma notificação mantém o controle disponível em segundo plano. Ao desconectar, o servidor volta a aguardar; não há reconexão automática. Fechar o app Linux remove os dispositivos virtuais criados por ele. O microfone padrão do sistema não é alterado.
 
-Requer Node.js 22+, npm, OpenSSL e uma sessão de áudio funcional. Debian/Ubuntu:
+O APK é uma versão de desenvolvimento assinada com chave de depuração, fora da Play Store. A atualização mantém o mesmo applicationId e a mesma assinatura de depuração da versão anterior. O novo `.deb` corrige as permissões que impediam abrir o app e visualizar o atalho no menu.
+
+## Se não conectar
+
+- Inicie o servidor no Android antes de clicar em Conectar no PC. Deixe o app do celular aberto para autorizar.
+- Use o IP exibido pelo app do **celular**, não o IP do computador. Se houver mais de um, escolha o da mesma rede do PC.
+- Ambos precisam conseguir se comunicar pela rede local. Redes de convidados com isolamento entre clientes, VPNs e firewalls podem bloquear a conexão. O servidor escuta **TCP 47321 no celular**; o PC inicia a conexão de saída.
+- Confira a permissão de microfone e a data/hora dos aparelhos. A rede precisa ter IPv4 local nesta versão.
+- No Linux, `pactl info` deve funcionar. Instale `pulseaudio-utils` e use uma sessão PulseAudio ou PipeWire com `pipewire-pulse` ativo.
+
+## Criptografia e áudio
+
+O servidor Android usa TLS 1.2/1.3 e uma chave privada gerada no Android Keystore. A conexão inicial de descoberta lê somente o certificado público, sem pedir áudio. Depois de o usuário comparar a impressão digital SHA-256, o PC abre outra conexão com validação de certificado e identidade. Uma mudança de identidade exige nova confirmação. Cada transmissão também exige autorização no celular; o microfone só é aberto após a aprovação.
+
+O áudio é PCM mono de 48 kHz/16 bits. O PC envia os dados ao `pacat` e publica um `module-remap-source`, que aparece como entrada de gravação. Não há conta, navegador, servidor externo nem reprodução automática nos alto-falantes. Use em rede local; não publique a porta na internet. Latência ponta a ponta ainda não foi medida.
+
+## Desenvolvimento
+
+Receptor: Node.js 22+, npm e servidor de áudio Linux funcional.
 
 ```sh
-sudo apt install pulseaudio-utils openssl
+sudo apt install pulseaudio-utils
 npm ci
 npm start
-```
-
-No PipeWire, o serviço `pipewire-pulse` precisa estar ativo. Em distribuições que usam PulseAudio, o daemon do usuário precisa estar ativo. `pactl info` deve funcionar antes de abrir o app. Se o Chromium avisar que o sandbox não está configurado, use o pacote `.deb`, que instala o helper com os privilégios corretos, ou habilite os namespaces de usuário conforme a política da sua distribuição. Não execute o app como root.
-
-```sh
 npm run package:linux
 ```
 
-O instalador sai em `dist/`. O primeiro início gera um certificado local usando OpenSSL no diretório de configuração do app. A chave privada não pertence ao repositório. O receptor envia PCM mono de 48 kHz/16 bits ao `pacat` e publica um `module-remap-source`, que faz a entrada aparecer como microfone real para os clientes PulseAudio/PipeWire. Não há reprodução automática nos alto-falantes.
+O `.deb` sai em `dist/`. O instalador configura o sandbox do Chromium e as permissões do app. Não execute como root nem desative o sandbox no uso normal.
 
-## Desenvolver o Android
-
-Abra `android/` no Android Studio ou use JDK 17/21, Android SDK 35 e Build Tools 35.0.0:
+Android: abra `android/` no Android Studio ou configure JDK 17/21, Android SDK 35 e Build Tools 35.0.0:
 
 ```sh
 cd android
 ./gradlew assembleDebug lintDebug
 ```
 
-Configure `ANDROID_HOME` ou `android/local.properties` para o SDK. O APK fica em `android/app/build/outputs/apk/debug/app-debug.apk`. A captura usa `AudioRecord` e um serviço foreground com notificação; o usuário inicia a transmissão com o app visível e pode continuar com a tela bloqueada. A permissão do microfone é solicitada em tempo de execução. O mute envia silêncio; parar encerra a captura. A compatibilidade com políticas de bateria e chamadas simultâneas ainda precisa de teste em aparelhos físicos.
-
-## Validar
+Configure `ANDROID_HOME` ou `android/local.properties`. O APK fica em `android/app/build/outputs/apk/debug/app-debug.apk`.
 
 ```sh
 npm test
-# Integração opcional: sessão de áudio Linux e JDK disponíveis
+# Integrações opcionais: sessão de áudio Linux, OpenSSL e JDK disponíveis
 MICBRIDGE_AUDIO_TEST=1 MICBRIDGE_JAVA_TEST=1 npm test
 ```
 
-Os testes básicos verificam TLS, código incorreto, formato incompatível, concorrência, cabeçalhos inválidos e preservação do PCM. A integração de áudio verifica a presença da entrada virtual e grava um tom de 440 Hz através dela. A integração Java executa a mesma implementação TLS usada pelo Android contra o receptor, incluindo rejeição de uma impressão digital incorreta.
+Os testes verificam o cliente TLS do PC, validação de identidade, espera por autorização, recusa, desconexão, formato de áudio e transferência do PCM. A integração Java executa o mesmo protocolo servidor usado pelo Android. A integração de áudio verifica a entrada virtual e grava nela um tom de 440 Hz.
 
-**Validação desta entrega:** build do APK de depuração, lint Android, empacotamento Linux, abertura da janela desktop e testes automatizados de transporte/áudio. Ainda não foi validada a captura em um celular físico, o desempenho em redes reais ou a seleção no Discord/OBS. Não há suporte a iPhone, Windows, USB, Bluetooth ou reconexão automática nesta versão. Latência ponta a ponta não foi medida.
+A captura em celular físico, o Android Keystore em aparelhos reais, redes Wi-Fi reais e a seleção no Discord/OBS ainda precisam de validação. O teste Java usa um certificado de teste e áudio sintético; não substitui essa validação. Não há versão para iPhone, Windows, USB ou Bluetooth.
 
-## GitHub
-
-Repositório: [Erickg246/micbridge](https://github.com/Erickg246/micbridge). O código está na branch `main`. Os instaladores são gerados localmente pelos comandos acima; ainda não foram publicados em GitHub Releases nem em lojas de aplicativos.
+Repositório: [Erickg246/micbridge](https://github.com/Erickg246/micbridge).

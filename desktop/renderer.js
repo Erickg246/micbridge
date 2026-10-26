@@ -1,16 +1,16 @@
 const $ = id => document.getElementById(id);
+let loaded = false;
 function render({ status, connection }) {
   $('status').textContent = status.message;
-  $('dot').className = status.state === 'error' ? 'error' : '';
-  $('disconnect').disabled = status.state !== 'streaming';
-  if (connection) {
-    $('address').textContent = connection.addresses.map(ip => `${ip}:${connection.port}`).join(' / ') || 'Sem endereço de rede';
-    $('code').textContent = connection.code;
-    $('fingerprint').textContent = connection.fingerprint;
-    $('copy').disabled = !connection.addresses.length;
-  }
+  $('dot').className = ['error', 'unavailable'].includes(status.state) ? 'error' : '';
+  const busy = ['connecting', 'approving', 'streaming'].includes(status.state);
+  $('disconnect').disabled = !busy;
+  $('connect').disabled = busy || ['starting', 'unavailable'].includes(status.state);
+  $('address').disabled = busy;
+  if (!loaded && connection?.address) $('address').value = connection.address;
+  loaded = true;
 }
 window.micbridge.onUpdate(render);
 window.micbridge.state().then(render);
-$('copy').onclick = async () => { await window.micbridge.copy(); $('copy').textContent = 'Copiado!'; setTimeout(() => { $('copy').textContent = 'Copiar endereço'; }, 1500); };
+$('pair-form').onsubmit = async event => { event.preventDefault(); await window.micbridge.connect($('address').value); };
 $('disconnect').onclick = () => window.micbridge.disconnect();

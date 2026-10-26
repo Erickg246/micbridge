@@ -1,0 +1,2 @@
+bb22c8c5a2d981fe1fbb4fdf4c92f9eb48f5603fa105c286a7c2a1794e7d01b6  downloads/MicBridge-0.2.0-android.apk
+14177b5704019dfc7dc07ab7d9775b88ee444c790ad0668dbb9b06a737d5045a  downloads/micbridge_0.2.0_amd64.deb

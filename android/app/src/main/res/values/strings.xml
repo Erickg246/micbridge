@@ -1,1 +1,5 @@
-<resources><string name="connect">Conectar microfone</string><string name="mute">Silenciar microfone</string></resources>
+<resources>
+    <string name="allow_pc">Permitir que o PC %1$s use seu microfone?</string>
+    <string name="start_error">Não foi possível iniciar: %1$s</string>
+    <string name="microphone_permission">Permissão de microfone necessária</string>
+</resources>
